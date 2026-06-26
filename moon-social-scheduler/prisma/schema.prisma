@@ -1,0 +1,359 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Platform {
+  INSTAGRAM
+  TIKTOK
+  YOUTUBE
+  LINKEDIN
+  PINTEREST
+  X
+  FACEBOOK
+  THREADS
+  BLUESKY
+  SNAPCHAT
+  GOOGLE_BUSINESS_PROFILE
+  REDDIT
+  TELEGRAM
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  EDITOR
+  APPROVER
+  VIEWER
+}
+
+enum AccountStatus {
+  CONNECTED
+  EXPIRED
+  REVOKED
+  ERROR
+}
+
+enum MediaType {
+  IMAGE
+  GIF
+  VIDEO
+}
+
+enum PostStatus {
+  DRAFT
+  SCHEDULED
+  QUEUED
+  PUBLISHING
+  PUBLISHED
+  PARTIALLY_PUBLISHED
+  FAILED
+  CANCELLED
+}
+
+enum PublishTargetStatus {
+  DRAFT
+  SCHEDULED
+  QUEUED
+  PUBLISHING
+  PUBLISHED
+  FAILED
+  SKIPPED
+}
+
+enum PublishJobStatus {
+  WAITING
+  ACTIVE
+  COMPLETED
+  FAILED
+  RETRYING
+  CANCELLED
+}
+
+enum QueueSlotStatus {
+  ACTIVE
+  PAUSED
+}
+
+model User {
+  id            String            @id @default(cuid())
+  name          String?
+  email         String            @unique
+  image         String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  memberships   WorkspaceMember[]
+  oauthStates   OAuthState[]
+  mediaAssets   MediaAsset[]
+  postsCreated  Post[]            @relation("PostCreator")
+  templates     PostTemplate[]
+  hashtagGroups HashtagGroup[]
+}
+
+model Workspace {
+  id            String            @id @default(cuid())
+  name          String
+  slug          String            @unique
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  members       WorkspaceMember[]
+  socialAccounts SocialAccount[]
+  mediaAssets   MediaAsset[]
+  posts         Post[]
+  queueSlots    QueueSlot[]
+  templates     PostTemplate[]
+  hashtagGroups HashtagGroup[]
+}
+
+model WorkspaceMember {
+  id          String        @id @default(cuid())
+  userId      String
+  workspaceId String
+  role        WorkspaceRole @default(OWNER)
+  createdAt   DateTime      @default(now())
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@index([workspaceId])
+}
+
+model OAuthState {
+  id          String   @id @default(cuid())
+  state       String   @unique
+  platform    Platform
+  userId      String
+  workspaceId String
+  verifier    String?
+  redirectTo  String?
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([platform, workspaceId])
+  @@index([expiresAt])
+}
+
+model SocialAccount {
+  id                 String               @id @default(cuid())
+  workspaceId        String
+  platform           Platform
+  providerAccountId  String
+  username           String
+  displayName        String?
+  avatarUrl          String?
+  status             AccountStatus        @default(CONNECTED)
+  accessToken        String
+  refreshToken       String?
+  tokenType          String?
+  scope              String?
+  expiresAt          DateTime?
+  metadata           Json?
+  lastSyncedAt       DateTime?
+  disconnectedAt     DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  workspace          Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  targets            PostTarget[]
+  analytics          AnalyticsMetric[]
+
+  @@unique([workspaceId, platform, providerAccountId])
+  @@index([workspaceId, platform])
+  @@index([status])
+}
+
+model MediaAsset {
+  id          String      @id @default(cuid())
+  workspaceId String
+  uploaderId  String
+  type        MediaType
+  fileName    String
+  mimeType    String
+  byteSize    BigInt
+  width       Int?
+  height      Int?
+  durationSec Int?
+  storageKey  String
+  publicUrl   String
+  altText     String?
+  tags        String[]    @default([])
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  workspace   Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  uploader    User        @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+  posts       PostMedia[]
+
+  @@index([workspaceId, type])
+}
+
+model Post {
+  id            String          @id @default(cuid())
+  workspaceId   String
+  creatorId     String
+  status        PostStatus      @default(DRAFT)
+  baseText      String
+  scheduledAt   DateTime?
+  publishedAt   DateTime?
+  timezone      String          @default("UTC")
+  dynamicValues Json?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  workspace     Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  creator       User            @relation("PostCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  versions      PostVersion[]
+  targets       PostTarget[]
+  media         PostMedia[]
+  jobs          PublishJob[]
+
+  @@index([workspaceId, status])
+  @@index([scheduledAt])
+}
+
+model PostVersion {
+  id        String   @id @default(cuid())
+  postId    String
+  platform  Platform
+  text      String
+  settings  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, platform])
+  @@index([platform])
+}
+
+model PostTarget {
+  id              String              @id @default(cuid())
+  postId          String
+  socialAccountId String
+  platform        Platform
+  status          PublishTargetStatus @default(SCHEDULED)
+  scheduledAt     DateTime?
+  publishedAt     DateTime?
+  externalPostId  String?
+  externalUrl     String?
+  errorCode       String?
+  errorMessage    String?
+  result          Json?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  post            Post                @relation(fields: [postId], references: [id], onDelete: Cascade)
+  socialAccount   SocialAccount       @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+  analytics       AnalyticsMetric[]
+
+  @@unique([postId, socialAccountId])
+  @@index([platform, status])
+  @@index([scheduledAt])
+}
+
+model PostMedia {
+  id          String     @id @default(cuid())
+  postId      String
+  mediaAssetId String
+  sortOrder   Int        @default(0)
+  createdAt   DateTime   @default(now())
+  post        Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
+  mediaAsset  MediaAsset @relation(fields: [mediaAssetId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, mediaAssetId])
+  @@index([postId, sortOrder])
+}
+
+model PublishJob {
+  id          String           @id @default(cuid())
+  postId      String
+  bullJobId   String?          @unique
+  status      PublishJobStatus @default(WAITING)
+  runAt       DateTime
+  attempts    Int              @default(0)
+  maxAttempts Int              @default(3)
+  lastError   String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  post        Post             @relation(fields: [postId], references: [id], onDelete: Cascade)
+  attemptsLog PublishAttempt[]
+
+  @@index([status, runAt])
+}
+
+model PublishAttempt {
+  id           String     @id @default(cuid())
+  publishJobId String
+  platform     Platform?
+  status       String
+  message      String?
+  payload      Json?
+  createdAt    DateTime   @default(now())
+  publishJob   PublishJob @relation(fields: [publishJobId], references: [id], onDelete: Cascade)
+
+  @@index([publishJobId, createdAt])
+}
+
+model QueueSlot {
+  id          String          @id @default(cuid())
+  workspaceId String
+  platform    Platform
+  dayOfWeek   Int
+  timeOfDay   String
+  timezone    String          @default("UTC")
+  status      QueueSlotStatus @default(ACTIVE)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  workspace   Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, platform, dayOfWeek, timeOfDay])
+  @@index([workspaceId, platform, status])
+}
+
+model AnalyticsMetric {
+  id              String         @id @default(cuid())
+  workspaceId     String
+  postTargetId    String?
+  socialAccountId String?
+  platform        Platform
+  metric          String
+  value           Int
+  measuredAt      DateTime
+  metadata        Json?
+  createdAt       DateTime       @default(now())
+  postTarget      PostTarget?    @relation(fields: [postTargetId], references: [id], onDelete: Cascade)
+  socialAccount   SocialAccount? @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, platform, measuredAt])
+  @@index([postTargetId])
+}
+
+model PostTemplate {
+  id          String    @id @default(cuid())
+  workspaceId String
+  creatorId   String
+  name        String
+  body        String
+  platforms   Platform[]
+  settings    Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  creator     User      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+}
+
+model HashtagGroup {
+  id          String    @id @default(cuid())
+  workspaceId String
+  creatorId   String
+  name        String
+  tags        String[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  creator     User      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, name])
+}
