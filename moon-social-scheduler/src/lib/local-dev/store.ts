@@ -20,6 +20,7 @@ type DemoMedia = (typeof demoMedia)[number]
 type DemoPost = (typeof demoPosts)[number] & {
   timezone?: string
   media?: DemoMedia[]
+  status?: PostStatus
 }
 
 type DemoQueueSlot = {
