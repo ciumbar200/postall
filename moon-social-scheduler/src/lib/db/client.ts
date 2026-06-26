@@ -11,7 +11,7 @@ const globalForPrisma = globalThis as unknown as {
 function createPrismaClient() {
   const require = createRequire(import.meta.url)
   const { PrismaPg } = require("@prisma/adapter-pg") as {
-    PrismaPg: new (options: { connectionString: string }) => unknown
+    PrismaPg: new (options: { connectionString: string }) => import("@prisma/adapter-pg").PrismaPgAdapter
   }
   const connectionString = process.env.DATABASE_URL
 
