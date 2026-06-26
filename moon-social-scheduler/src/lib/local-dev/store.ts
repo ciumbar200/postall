@@ -71,6 +71,11 @@ export function connectPlatform(platform: Platform) {
     return existing
   }
 
+  // Solo Instagram y TikTok en demo
+  if (platform !== Platform.INSTAGRAM && platform !== Platform.TIKTOK) {
+    throw new Error(`Platform ${platform} not supported in demo mode`)
+  }
+
   const username =
     platform === Platform.INSTAGRAM ? "moon.instagram.local" : "moon.tiktok.local"
   const account = {
