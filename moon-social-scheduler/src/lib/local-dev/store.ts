@@ -21,6 +21,11 @@ type DemoPost = (typeof demoPosts)[number] & {
   timezone?: string
   media?: DemoMedia[]
   status?: PostStatus
+  targets?: Array<{
+    platform: Platform
+    status: PostTargetStatus
+    socialAccount: DemoAccount
+  }>
 }
 
 type DemoQueueSlot = {
