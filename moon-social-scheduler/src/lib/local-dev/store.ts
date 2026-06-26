@@ -173,7 +173,7 @@ export function updatePost(id: string, input: { baseText?: string; scheduledAt?:
   }
 
   if (input.scheduledAt !== undefined) {
-    post.scheduledAt = input.scheduledAt
+    post.scheduledAt = input.scheduledAt ?? new Date().toISOString()
     post.status = input.scheduledAt ? PostStatus.SCHEDULED : PostStatus.DRAFT
     post.targets = post.targets.map((target) => ({
       ...target,
