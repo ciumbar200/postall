@@ -24,6 +24,7 @@ function mediaFileUrl(key: string) {
   return `/api/media/file?key=${encodeURIComponent(key)}`
 }
 
+export function hasSupabaseStorageEnv() {
   return Boolean(
     (process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL) &&
       supabaseServiceRoleKey()
