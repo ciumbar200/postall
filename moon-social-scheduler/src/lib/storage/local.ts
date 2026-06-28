@@ -1,8 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises"
 import path from "node:path"
 import { randomUUID } from "node:crypto"
-import { MediaType } from "@/generated/prisma/enums"
-import { optionalEnv } from "@/lib/env"
+import { MediaType } from "@/lib/domain/enums"
 
 const maxUploadBytes = 5 * 1024 * 1024 * 1024
 
@@ -41,11 +40,9 @@ export async function persistLocalMedia(file: File) {
   await mkdir(outputDir, { recursive: true })
   await writeFile(outputPath, Buffer.from(await file.arrayBuffer()))
 
-  const appUrl = optionalEnv("APP_URL", "http://localhost:3000")
-
   return {
     storageKey: key,
-    publicUrl: `${appUrl}/uploads/${key}`,
+    publicUrl: `/uploads/${key}`,
     type: mediaTypeFromMime(file.type),
     mimeType: file.type || "application/octet-stream",
     byteSize: BigInt(file.size),

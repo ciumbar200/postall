@@ -2,13 +2,14 @@
 
 import * as React from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { ImagePlusIcon, UploadIcon } from "lucide-react"
+import { UploadIcon } from "lucide-react"
 import { toast } from "sonner"
 import { useMediaAssets } from "@/hooks/use-dashboard-data"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { MediaPreview } from "@/components/shared/media-preview"
 import { StatusBadge } from "@/components/shared/status-badge"
 
 async function uploadMedia(file: File) {
@@ -81,9 +82,13 @@ export function MediaLibrary() {
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {assets.map((asset) => (
               <div key={asset.id} className="rounded-lg border bg-muted/20 p-3">
-                <div className="flex aspect-video items-center justify-center rounded-md bg-background">
-                  <ImagePlusIcon className="size-5 text-muted-foreground" />
-                </div>
+                <MediaPreview
+                  publicUrl={asset.publicUrl}
+                  type={asset.type}
+                  mimeType={asset.mimeType}
+                  alt={asset.fileName}
+                  className="aspect-video w-full rounded-md bg-background"
+                />
                 <div className="mt-3 flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div className="truncate text-sm font-medium">{asset.fileName}</div>

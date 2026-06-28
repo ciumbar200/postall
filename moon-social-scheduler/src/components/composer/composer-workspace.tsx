@@ -2,9 +2,9 @@
 
 import * as React from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { CalendarClockIcon, ImagePlusIcon, SendIcon } from "lucide-react"
+import { CalendarClockIcon, SendIcon } from "lucide-react"
 import { toast } from "sonner"
-import { Platform } from "@/generated/prisma/enums"
+import { Platform } from "@/lib/domain/enums"
 import { useAccounts, useMediaAssets } from "@/hooks/use-dashboard-data"
 import { mvpPlatforms, platformMeta } from "@/lib/ui/platforms"
 import { useComposerStore } from "@/stores/composer-store"
@@ -35,6 +35,7 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
+import { MediaPreview } from "@/components/shared/media-preview"
 import { PlatformPill } from "@/components/shared/platform-pill"
 import { StatusBadge } from "@/components/shared/status-badge"
 
@@ -190,9 +191,13 @@ export function ComposerWorkspace() {
                             : "border-border bg-muted/20 hover:bg-muted/50",
                         ].join(" ")}
                       >
-                        <span className="flex size-10 items-center justify-center rounded-md bg-muted">
-                          <ImagePlusIcon className="size-4" />
-                        </span>
+                        <MediaPreview
+                          publicUrl={asset.publicUrl}
+                          type={asset.type}
+                          mimeType={asset.mimeType}
+                          alt={asset.fileName}
+                          className="size-10 shrink-0 rounded-md"
+                        />
                         <span className="min-w-0">
                           <span className="block truncate font-medium">{asset.fileName}</span>
                           <span className="block text-xs text-muted-foreground">{asset.type}</span>
@@ -380,21 +385,21 @@ export function ComposerWorkspace() {
                       {text.length}/{meta.limit}
                     </span>
                   </div>
-                  <div className="aspect-[4/3] rounded-md border bg-background/70 p-3">
-                    <div className="flex h-full flex-col justify-between gap-3">
-                      <p className="line-clamp-5 text-sm leading-6">{text}</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {(selectedMedia.length ? selectedMedia : mediaAssets.slice(0, 2)).map(
-                          (asset) => (
-                            <div
-                              key={asset.id}
-                              className="flex h-16 items-center justify-center rounded-md bg-muted text-xs text-muted-foreground"
-                            >
-                              {asset.type}
-                            </div>
-                          )
-                        )}
-                      </div>
+                  <div className="overflow-hidden rounded-md border bg-background/70">
+                    {(selectedMedia.length ? selectedMedia : mediaAssets.slice(0, 1)).map(
+                      (asset) => (
+                        <MediaPreview
+                          key={asset.id}
+                          publicUrl={asset.publicUrl}
+                          type={asset.type}
+                          mimeType={asset.mimeType}
+                          alt={asset.fileName}
+                          className="aspect-[4/5] w-full"
+                        />
+                      )
+                    )}
+                    <div className="p-3">
+                      <p className="line-clamp-5 text-sm leading-6">{text || "Your caption will appear here."}</p>
                     </div>
                   </div>
                 </div>

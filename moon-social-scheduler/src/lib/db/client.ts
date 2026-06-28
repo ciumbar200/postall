@@ -13,7 +13,8 @@ function createPrismaClient() {
   const { PrismaPg } = require("@prisma/adapter-pg") as {
     PrismaPg: new (options: { connectionString: string }) => any
   }
-  const connectionString = process.env.DATABASE_URL
+  const connectionString =
+    process.env.DATABASE_POOLER_URL || process.env.DATABASE_URL
 
   if (!connectionString) {
     throw new Error("Missing required environment variable: DATABASE_URL")

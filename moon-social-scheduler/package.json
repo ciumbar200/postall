@@ -3,7 +3,7 @@
   "version": "0.2.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
     "lint": "eslint \"src/{app,components,hooks,lib,stores}/**/*.{ts,tsx}\" next.config.ts prisma.config.ts eslint.config.mjs",
@@ -11,7 +11,7 @@
     "prisma:validate": "prisma validate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
-    "postinstall": "echo 'Skipping prisma generate for build'"
+    "postinstall": "prisma generate"
   },
   "engines": {
     "node": ">=24"
