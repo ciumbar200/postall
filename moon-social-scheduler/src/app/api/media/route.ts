@@ -59,52 +59,53 @@ export async function POST(request: Request) {
   const formData = await request.formData()
   const file = formData.get("file")
 
-  try {
-    if (!(file instanceof File)) {
-      return errorJson(new Error("Expected multipart field `file`."), 400)
-    }
+  if (!(file instanceof File)) {
+    return errorJson(new Error("Expected multipart field `file`."), 400)
+  }
 
-    const { user, workspace } = await getCurrentUserContext()
+  try {
     const stored = hasSupabaseStorageEnv()
       ? await persistSupabaseMedia(file)
       : await persistLocalMedia(file)
 
-    const asset = await prisma.mediaAsset.create({
-      data: {
-        workspaceId: workspace.id,
-        uploaderId: user.id,
-        type: stored.type,
-        fileName: stored.fileName,
-        mimeType: stored.mimeType,
-        byteSize: stored.byteSize,
-        storageKey: stored.storageKey,
-        publicUrl: stored.publicUrl,
-      },
-    }).catch(() =>
-      addMedia({
+    try {
+      const { user, workspace } = await getCurrentUserContext()
+      const asset = await prisma.mediaAsset.create({
+        data: {
+          workspaceId: workspace.id,
+          uploaderId: user.id,
+          type: stored.type,
+          fileName: stored.fileName,
+          mimeType: stored.mimeType,
+          byteSize: stored.byteSize,
+          storageKey: stored.storageKey,
+          publicUrl: stored.publicUrl,
+        },
+      })
+
+      return json({ asset: serializeAsset(asset) }, { status: 201 })
+    } catch {
+      const asset = addMedia({
         type: stored.type,
         fileName: stored.fileName,
         mimeType: stored.mimeType,
         byteSize: String(stored.byteSize),
         publicUrl: stored.publicUrl,
       })
-    )
 
-    return json({ asset: serializeAsset(asset) }, { status: 201 })
-  } catch (error) {
-    if (!(file instanceof File)) {
-      return errorJson(error)
+      return json(
+        {
+          asset: serializeAsset({
+            ...asset,
+            storageKey: stored.storageKey,
+            byteSize: asset.byteSize,
+            createdAt: asset.createdAt,
+          }),
+        },
+        { status: 201 }
+      )
     }
-
-    const stored = await persistLocalMedia(file)
-    const asset = addMedia({
-      type: stored.type,
-      fileName: stored.fileName,
-      mimeType: stored.mimeType,
-      byteSize: String(stored.byteSize),
-      publicUrl: stored.publicUrl,
-    })
-
-    return json({ asset: serializeAsset({ ...asset, byteSize: asset.byteSize, createdAt: asset.createdAt }) }, { status: 201 })
+  } catch (error) {
+    return errorJson(error)
   }
 }

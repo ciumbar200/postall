@@ -33,12 +33,30 @@ export function MediaLibrary() {
   const queryClient = useQueryClient()
   const { data: assets = [] } = useMediaAssets()
   const [file, setFile] = React.useState<File | null>(null)
+  const localPreviewUrl = React.useMemo(
+    () => (file ? URL.createObjectURL(file) : null),
+    [file]
+  )
+
+  React.useEffect(() => {
+    return () => {
+      if (localPreviewUrl) {
+        URL.revokeObjectURL(localPreviewUrl)
+      }
+    }
+  }, [localPreviewUrl])
+
   const mutation = useMutation({
     mutationFn: uploadMedia,
-    onSuccess: async () => {
+    onSuccess: async (data: { asset: (typeof assets)[number] }) => {
       toast.success("Media uploaded")
       setFile(null)
-      await queryClient.invalidateQueries({ queryKey: ["media"] })
+      queryClient.setQueryData<{ assets: typeof assets }>(["media"], (current) => ({
+        assets: [
+          data.asset,
+          ...(current?.assets ?? []).filter((asset) => asset.id !== data.asset.id),
+        ],
+      }))
     },
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : "Upload failed"),
@@ -62,6 +80,15 @@ export function MediaLibrary() {
                 onChange={(event) => setFile(event.target.files?.[0] ?? null)}
               />
             </Field>
+            {localPreviewUrl ? (
+              <MediaPreview
+                publicUrl={localPreviewUrl}
+                type={file?.type.startsWith("video/") ? "VIDEO" : "IMAGE"}
+                mimeType={file?.type}
+                alt={file?.name ?? "Selected file"}
+                className="aspect-video w-full rounded-md border bg-background"
+              />
+            ) : null}
             <Button
               disabled={!file || mutation.isPending}
               onClick={() => file && mutation.mutate(file)}
