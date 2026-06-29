@@ -1,0 +1,8 @@
+{
+  "name": "postall",
+  "private": true,
+  "description": "Monorepo Postall — Vercel build apunta a moon-social-scheduler",
+  "scripts": {
+    "vercel-build": "npm --prefix moon-social-scheduler ci && npm --prefix moon-social-scheduler run build"
+  }
+}

@@ -1,6 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "cd moon-social-scheduler && npm install",
-  "buildCommand": "cd moon-social-scheduler && npm run build",
-  "outputDirectory": "moon-social-scheduler/.next"
+  "installCommand": "npm --prefix moon-social-scheduler ci",
+  "buildCommand": "npm --prefix moon-social-scheduler run build",
+  "outputDirectory": "moon-social-scheduler/.next",
+  "framework": "nextjs"
 }
