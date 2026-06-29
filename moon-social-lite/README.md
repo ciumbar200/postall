@@ -1,6 +1,11 @@
-# MoOn
+# Postall Lite (archivado · solo landing/demo)
 
-MoOn is a presentation-ready social publishing SaaS demo focused on direct provider connectivity, multi-network workflow, pricing expansion and workspace collaboration.
+> ⚠️ Esta app NO es el producto. El producto canónico es **Postall** (`../moon-social-scheduler`).
+> `moon-social-lite` se conserva únicamente como landing/demo de presentación y no recibe nuevas
+> funcionalidades. Toda la lógica de producto (auth, billing, API, MCP, adapters) vive en la app
+> principal.
+
+Postall Lite is a presentation-ready social publishing SaaS demo focused on direct provider connectivity, multi-network workflow, pricing expansion and workspace collaboration.
 
 Base workspace defaults now include the full launch stack as visible sample accounts:
 

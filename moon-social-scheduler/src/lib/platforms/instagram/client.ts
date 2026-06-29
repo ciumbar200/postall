@@ -61,14 +61,17 @@ export class InstagramApiClient {
     return payload as T
   }
 
-  async exchangeShortLivedToken(shortLivedToken: string): Promise<{
+  async exchangeShortLivedToken(
+    shortLivedToken: string,
+    clientSecret?: string
+  ): Promise<{
     access_token: string
     token_type?: string
     expires_in?: number
   }> {
     const url = new URL(`${this.graphBase}/access_token`)
     url.searchParams.set("grant_type", "ig_exchange_token")
-    url.searchParams.set("client_secret", requiredEnv("INSTAGRAM_APP_SECRET"))
+    url.searchParams.set("client_secret", clientSecret ?? requiredEnv("INSTAGRAM_APP_SECRET"))
     url.searchParams.set("access_token", shortLivedToken)
 
     const response = await fetch(url, { headers: { Accept: "application/json" } })

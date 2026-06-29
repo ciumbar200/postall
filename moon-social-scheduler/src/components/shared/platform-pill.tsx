@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge"
-import type { Platform } from "@/generated/prisma/enums"
+import type { Platform } from "@/lib/domain/enums"
 import { platformMeta } from "@/lib/ui/platforms"
 
 export function PlatformPill({ platform }: { platform: Platform }) {

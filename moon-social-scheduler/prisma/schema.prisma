@@ -79,6 +79,56 @@ enum QueueSlotStatus {
   PAUSED
 }
 
+enum PlanTier {
+  FREE
+  CREATOR
+  AGENT
+  AGENCY
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+}
+
+enum NotificationType {
+  PUBLISH_FAILED
+  TOKEN_EXPIRING
+  TOKEN_EXPIRED
+  RENEWAL_REMINDER
+  SYSTEM
+}
+
+enum NotificationSeverity {
+  INFO
+  WARNING
+  ERROR
+}
+
+enum ConnectorType {
+  IMAGE_GEN
+  CANVA
+  HEYGEN
+  FLIKI
+}
+
+enum AssetKind {
+  IMAGE
+  VIDEO
+  DESIGN
+}
+
+enum AgentRunStatus {
+  PLANNING
+  GENERATING
+  DRAFTED
+  FAILED
+  DONE
+}
+
 model User {
   id            String            @id @default(cuid())
   name          String?
@@ -92,12 +142,14 @@ model User {
   postsCreated  Post[]            @relation("PostCreator")
   templates     PostTemplate[]
   hashtagGroups HashtagGroup[]
+  agentRunsCreated AgentRun[]     @relation("AgentRunCreator")
 }
 
 model Workspace {
   id            String            @id @default(cuid())
   name          String
   slug          String            @unique
+  parentWorkspaceId String?
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
   members       WorkspaceMember[]
@@ -107,6 +159,23 @@ model Workspace {
   queueSlots    QueueSlot[]
   templates     PostTemplate[]
   hashtagGroups HashtagGroup[]
+  subscription  Subscription?
+  usageCounters UsageCounter[]
+  apiKeys       ApiKey[]
+  notifications Notification[]
+  postLabels    PostLabel[]
+  webhooks      Webhook[]
+  branding      WorkspaceBranding?
+  parentWorkspace Workspace?      @relation("WorkspaceChildren", fields: [parentWorkspaceId], references: [id], onDelete: SetNull)
+  childWorkspaces Workspace[]     @relation("WorkspaceChildren")
+  brandProfile  BrandProfile?
+  connectorCredentials ConnectorCredential[]
+  platformAppCredentials PlatformAppCredential[]
+  aiSettings   WorkspaceAiSettings?
+  generatedAssets GeneratedAsset[]
+  agentRuns    AgentRun[]
+
+  @@index([parentWorkspaceId])
 }
 
 model WorkspaceMember {
@@ -208,6 +277,7 @@ model Post {
   targets       PostTarget[]
   media         PostMedia[]
   jobs          PublishJob[]
+  labels        PostLabelOnPost[]
 
   @@index([workspaceId, status])
   @@index([scheduledAt])
@@ -356,4 +426,222 @@ model HashtagGroup {
   creator     User      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
 
   @@unique([workspaceId, name])
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  workspaceId          String             @unique
+  tier                 PlanTier           @default(FREE)
+  status               SubscriptionStatus @default(ACTIVE)
+  stripeCustomerId     String?            @unique
+  stripeSubscriptionId String?            @unique
+  stripePriceId        String?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  renewalNotifiedAt    DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  workspace            Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+}
+
+model UsageCounter {
+  id            String    @id @default(cuid())
+  workspaceId   String
+  periodStart   DateTime
+  postsCreated  Int       @default(0)
+  apiCalls      Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, periodStart])
+  @@index([workspaceId])
+}
+
+model ApiKey {
+  id              String    @id @default(cuid())
+  workspaceId     String
+  name            String
+  prefix          String    @unique
+  hashedKey       String    @unique
+  scopes          String[]  @default([])
+  rateLimitPerMin Int       @default(60)
+  lastUsedAt      DateTime?
+  revokedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+}
+
+model Notification {
+  id          String               @id @default(cuid())
+  workspaceId String
+  type        NotificationType
+  severity    NotificationSeverity @default(INFO)
+  title       String
+  body        String?
+  link        String?
+  metadata    Json?
+  readAt      DateTime?
+  createdAt   DateTime             @default(now())
+  workspace   Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, readAt])
+  @@index([workspaceId, createdAt])
+}
+
+model PostLabel {
+  id          String            @id @default(cuid())
+  workspaceId String
+  name        String
+  color       String            @default("#6366f1")
+  createdAt   DateTime          @default(now())
+  workspace   Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  posts       PostLabelOnPost[]
+
+  @@unique([workspaceId, name])
+  @@index([workspaceId])
+}
+
+model PostLabelOnPost {
+  postId  String
+  labelId String
+  post    Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  label   PostLabel @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@id([postId, labelId])
+  @@index([labelId])
+}
+
+model Webhook {
+  id              String    @id @default(cuid())
+  workspaceId     String
+  url             String
+  secret          String
+  events          String[]  @default([])
+  active          Boolean   @default(true)
+  lastStatus      Int?
+  lastDeliveredAt DateTime?
+  createdAt       DateTime  @default(now())
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+}
+
+model WorkspaceBranding {
+  id                  String    @id @default(cuid())
+  workspaceId         String    @unique
+  brandName           String?
+  logoUrl             String?
+  primaryColor        String?
+  customDomain        String?   @unique
+  supportEmail        String?
+  hidePostallBranding Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  workspace           Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model BrandProfile {
+  id              String   @id @default(cuid())
+  workspaceId     String   @unique
+  voice           String?  // profesional, casual, provocativo, inspirador
+  tone            String?  // serio, juguetón, sarcástico, empático
+  audience        String?  // target audience description
+  pillars         Json?    // content pillars: [{title, description, examples}]
+  keywords        String[] @default([])
+  bannedWords     String[] @default([])
+  paletteJson     Json?    // {primary, secondary, accent, background}
+  fonts           String[] @default([])
+  sampleCaptions  String[] @default([])
+  logoMediaId     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  agentRuns       AgentRun[]
+}
+
+model ConnectorCredential {
+  id              String         @id @default(cuid())
+  workspaceId     String
+  connector       ConnectorType
+  status          String         @default("ACTIVE")
+  credentialsJson Json           // encrypted API keys/tokens
+  expiresAt       DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  workspace       Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  generatedAssets GeneratedAsset[]
+
+  @@unique([workspaceId, connector])
+  @@index([workspaceId, connector])
+}
+
+model GeneratedAsset {
+  id            String      @id @default(cuid())
+  workspaceId   String
+  connector     ConnectorType
+  kind          AssetKind
+  prompt        String
+  mediaAssetId  String?
+  externalId    String?     // for async video polling
+  status        String      @default("PENDING")
+  meta          Json?      // {aspectRatio, duration, avatarId, voiceId, etc}
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  workspace     Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  credential    ConnectorCredential @relation(fields: [credentialId], references: [id], onDelete: Restrict)
+  credentialId  String
+
+  @@index([workspaceId, connector, status])
+  @@index([externalId])
+}
+
+model AgentRun {
+  id          String         @id @default(cuid())
+  workspaceId String
+  brief       String                    // user input brief
+  status      AgentRunStatus @default(PLANNING)
+  planJson    Json?                     // generated plan content pieces
+  resultJson   Json?                     // final result with post IDs
+  cost        Float?
+  createdById String
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  workspace   Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  brandProfile BrandProfile @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
+  brandProfileId String
+  createdBy   User           @relation("AgentRunCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, status])
+  @@index([createdAt])
+}
+
+model PlatformAppCredential {
+  id              String   @id @default(cuid())
+  workspaceId     String
+  platform        Platform
+  credentialsJson Json
+  status          String   @default("ACTIVE")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, platform])
+  @@index([workspaceId, platform])
+}
+
+model WorkspaceAiSettings {
+  id          String   @id @default(cuid())
+  workspaceId String   @unique
+  provider    String
+  model       String?
+  apiKey      String?
+  extrasJson  Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 }

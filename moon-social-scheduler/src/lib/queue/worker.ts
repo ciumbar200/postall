@@ -1,6 +1,6 @@
 import { loadEnvConfig } from "@next/env"
 import { Worker } from "bullmq"
-import { PublishJobStatus } from "@/generated/prisma/enums"
+import { PublishJobStatus } from "@/lib/domain/enums"
 import { prisma } from "@/lib/db/client"
 import { publishPostJob } from "@/lib/posts/publishing"
 import { getRedisConnection } from "@/lib/queue/config"

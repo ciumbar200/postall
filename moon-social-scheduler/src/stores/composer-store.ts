@@ -1,7 +1,7 @@
 "use client"
 
 import { create } from "zustand"
-import { Platform } from "@/generated/prisma/enums"
+import { Platform } from "@/lib/domain/enums"
 
 type PlatformVersion = {
   text: string

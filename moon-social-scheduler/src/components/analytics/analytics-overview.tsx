@@ -4,7 +4,7 @@ import { BarChart3Icon, MousePointerClickIcon, TrendingUpIcon, UsersIcon } from 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { PlatformPill } from "@/components/shared/platform-pill"
-import { Platform } from "@/generated/prisma/enums"
+import { Platform } from "@/lib/domain/enums"
 
 const stats = [
   { label: "Reach", value: "42.8k", icon: UsersIcon, progress: 72 },

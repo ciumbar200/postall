@@ -1,6 +1,14 @@
-import type { Platform } from "@/generated/prisma/enums"
+import type { Platform } from "@/lib/domain/enums"
 
-export type PlatformSlug = "instagram" | "tiktok"
+export type PlatformSlug =
+  | "instagram"
+  | "tiktok"
+  | "linkedin"
+  | "facebook"
+  | "youtube"
+  | "threads"
+  | "bluesky"
+  | "telegram"
 
 export type PlatformMedia = {
   id: string
@@ -13,6 +21,7 @@ export type PlatformMedia = {
 
 export type PlatformAccount = {
   id: string
+  workspaceId?: string
   providerAccountId: string
   username: string
   accessToken: string
@@ -21,15 +30,22 @@ export type PlatformAccount = {
   metadata?: Record<string, unknown> | null
 }
 
+export type PlatformAppCredentials = {
+  clientId: string
+  clientSecret: string
+}
+
 export type OAuthStartOptions = {
   state: string
   redirectUri: string
+  appCredentials?: PlatformAppCredentials
 }
 
 export type OAuthExchangeInput = {
   code: string
   redirectUri: string
   verifier?: string | null
+  appCredentials?: PlatformAppCredentials
 }
 
 export type ConnectedPlatformAccount = {
@@ -67,6 +83,20 @@ export type PlatformMetric = {
   metadata?: Record<string, unknown>
 }
 
+export type TokenRefreshResult = {
+  accessToken: string
+  refreshToken?: string | null
+  expiresAt?: Date | null
+  scope?: string | null
+  metadata?: Record<string, unknown> | null
+}
+
+export type PublishCommentInput = {
+  account: PlatformAccount
+  externalPostId: string
+  text: string
+}
+
 export type PlatformAdapter = {
   platform: Platform
   slug: PlatformSlug
@@ -74,6 +104,8 @@ export type PlatformAdapter = {
   color: string
   characterLimit: number
   scopes: string[]
+  /** Whether the platform supports an automatic first comment after publishing. */
+  supportsFirstComment?: boolean
   auth: {
     getAuthorizationUrl(options: OAuthStartOptions): URL
     exchangeCode(input: OAuthExchangeInput): Promise<ConnectedPlatformAccount>
@@ -84,4 +116,14 @@ export type PlatformAdapter = {
   }
   publish(input: PublishPostInput): Promise<PublishPostResult>
   metrics(account: PlatformAccount, externalPostId: string): Promise<PlatformMetric[]>
+  /**
+   * Optional proactive token refresh. Adapters that support refresh tokens
+   * implement this so the scheduled cron can renew access before expiry.
+   */
+  refresh?(account: PlatformAccount): Promise<TokenRefreshResult>
+  /**
+   * Optional automatic first comment posted right after the main post.
+   * Implemented by platforms that support native comments (IG, FB, LinkedIn, Threads...).
+   */
+  publishComment?(input: PublishCommentInput): Promise<void>
 }

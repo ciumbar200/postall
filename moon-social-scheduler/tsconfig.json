@@ -30,5 +30,12 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", ".next", "src/generated", "output"]
+  "exclude": [
+    "node_modules",
+    ".next",
+    "src/generated",
+    "prisma/generated-client-backup",
+    "supabase/functions",
+    "output"
+  ]
 }

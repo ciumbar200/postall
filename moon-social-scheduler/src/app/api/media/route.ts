@@ -1,6 +1,7 @@
 import { errorJson, json } from "@/lib/api/response"
-import { getCurrentUserContext } from "@/lib/auth/session"
+import { requireUserContext, UnauthorizedError } from "@/lib/auth/session"
 import { prisma } from "@/lib/db/client"
+import { isDatabaseConfigured } from "@/lib/db/runtime"
 import { addMedia, listMedia } from "@/lib/local-dev/store"
 import { persistLocalMedia } from "@/lib/storage/local"
 import { hasSupabaseStorageEnv, persistSupabaseMedia } from "@/lib/storage/supabase"
@@ -37,7 +38,7 @@ function serializeAsset(asset: {
 
 export async function GET() {
   try {
-    const { workspace } = await getCurrentUserContext()
+    const { workspace } = await requireUserContext()
     const assets = await prisma.mediaAsset.findMany({
       where: { workspaceId: workspace.id },
       orderBy: { createdAt: "desc" },
@@ -51,6 +52,12 @@ export async function GET() {
 
     return json({ assets: listMedia() })
   } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return errorJson(error, 401)
+    }
+    if (isDatabaseConfigured()) {
+      return errorJson(error)
+    }
     return json({ assets: listMedia() })
   }
 }
@@ -69,7 +76,7 @@ export async function POST(request: Request) {
       : await persistLocalMedia(file)
 
     try {
-      const { user, workspace } = await getCurrentUserContext()
+      const { user, workspace } = await requireUserContext()
       const asset = await prisma.mediaAsset.create({
         data: {
           workspaceId: workspace.id,

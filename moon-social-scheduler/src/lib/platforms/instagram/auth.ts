@@ -4,6 +4,7 @@ import type {
   ConnectedPlatformAccount,
   OAuthExchangeInput,
   OAuthStartOptions,
+  PlatformAppCredentials,
 } from "@/lib/platforms/types"
 
 type ShortLivedTokenResponse = {
@@ -24,10 +25,22 @@ export const instagramScopes = [
   "instagram_business_content_publish",
 ]
 
+function resolveInstagramCredentials(appCredentials?: PlatformAppCredentials) {
+  if (appCredentials?.clientId && appCredentials?.clientSecret) {
+    return appCredentials
+  }
+  return {
+    clientId: requiredEnv("INSTAGRAM_APP_ID"),
+    clientSecret: requiredEnv("INSTAGRAM_APP_SECRET"),
+  }
+}
+
 export function getInstagramAuthorizationUrl({
   state,
   redirectUri,
+  appCredentials,
 }: OAuthStartOptions): URL {
+  const credentials = resolveInstagramCredentials(appCredentials)
   const url = new URL(
     optionalEnv(
       "INSTAGRAM_AUTHORIZATION_URL",
@@ -35,7 +48,7 @@ export function getInstagramAuthorizationUrl({
     )
   )
 
-  url.searchParams.set("client_id", requiredEnv("INSTAGRAM_APP_ID"))
+  url.searchParams.set("client_id", credentials.clientId)
   url.searchParams.set("redirect_uri", redirectUri)
   url.searchParams.set("response_type", "code")
   url.searchParams.set("scope", instagramScopes.join(","))
@@ -47,10 +60,12 @@ export function getInstagramAuthorizationUrl({
 export async function exchangeInstagramCode({
   code,
   redirectUri,
+  appCredentials,
 }: OAuthExchangeInput): Promise<ConnectedPlatformAccount> {
+  const credentials = resolveInstagramCredentials(appCredentials)
   const body = new URLSearchParams({
-    client_id: requiredEnv("INSTAGRAM_APP_ID"),
-    client_secret: requiredEnv("INSTAGRAM_APP_SECRET"),
+    client_id: credentials.clientId,
+    client_secret: credentials.clientSecret,
     grant_type: "authorization_code",
     redirect_uri: redirectUri,
     code,
@@ -82,7 +97,8 @@ export async function exchangeInstagramCode({
   }
 
   const longLived = await instagramClient.exchangeShortLivedToken(
-    shortLived.access_token
+    shortLived.access_token,
+    credentials.clientSecret
   )
 
   const profile = await instagramClient.request<InstagramProfileResponse>("/me", {

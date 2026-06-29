@@ -1,4 +1,4 @@
-import { Platform } from "@/generated/prisma/enums"
+import { Platform } from "@/lib/domain/enums"
 import {
   exchangeInstagramCode,
   getInstagramAuthorizationUrl,
@@ -10,6 +10,8 @@ import {
 } from "@/lib/platforms/instagram/formatter"
 import { fetchInstagramMetrics } from "@/lib/platforms/instagram/metrics"
 import { publishInstagramPost } from "@/lib/platforms/instagram/publish"
+import { publishInstagramComment } from "@/lib/platforms/instagram/comment"
+import { refreshInstagramToken } from "@/lib/platforms/instagram/refresh"
 import type { PlatformAdapter } from "@/lib/platforms/types"
 
 export const instagramAdapter: PlatformAdapter = {
@@ -19,6 +21,7 @@ export const instagramAdapter: PlatformAdapter = {
   color: "#e4405f",
   characterLimit: 2200,
   scopes: instagramScopes,
+  supportsFirstComment: true,
   auth: {
     getAuthorizationUrl: getInstagramAuthorizationUrl,
     exchangeCode: exchangeInstagramCode,
@@ -29,4 +32,6 @@ export const instagramAdapter: PlatformAdapter = {
   },
   publish: publishInstagramPost,
   metrics: fetchInstagramMetrics,
+  refresh: refreshInstagramToken,
+  publishComment: publishInstagramComment,
 }

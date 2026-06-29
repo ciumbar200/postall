@@ -4,6 +4,7 @@ import type {
   ConnectedPlatformAccount,
   OAuthExchangeInput,
   OAuthStartOptions,
+  PlatformAppCredentials,
 } from "@/lib/platforms/types"
 
 export const tiktokScopes = ["user.info.basic", "video.publish", "video.upload"]
@@ -37,10 +38,22 @@ type TikTokUserInfoResponse = {
   }
 }
 
+function resolveTikTokCredentials(appCredentials?: PlatformAppCredentials) {
+  if (appCredentials?.clientId && appCredentials?.clientSecret) {
+    return appCredentials
+  }
+  return {
+    clientId: requiredEnv("TIKTOK_CLIENT_KEY"),
+    clientSecret: requiredEnv("TIKTOK_CLIENT_SECRET"),
+  }
+}
+
 export function getTikTokAuthorizationUrl({
   state,
   redirectUri,
+  appCredentials,
 }: OAuthStartOptions): URL {
+  const credentials = resolveTikTokCredentials(appCredentials)
   const url = new URL(
     optionalEnv(
       "TIKTOK_AUTHORIZATION_URL",
@@ -48,7 +61,7 @@ export function getTikTokAuthorizationUrl({
     )
   )
 
-  url.searchParams.set("client_key", requiredEnv("TIKTOK_CLIENT_KEY"))
+  url.searchParams.set("client_key", credentials.clientId)
   url.searchParams.set("redirect_uri", redirectUri)
   url.searchParams.set("response_type", "code")
   url.searchParams.set("scope", tiktokScopes.join(","))
@@ -60,10 +73,12 @@ export function getTikTokAuthorizationUrl({
 export async function exchangeTikTokCode({
   code,
   redirectUri,
+  appCredentials,
 }: OAuthExchangeInput): Promise<ConnectedPlatformAccount> {
+  const credentials = resolveTikTokCredentials(appCredentials)
   const body = new URLSearchParams({
-    client_key: requiredEnv("TIKTOK_CLIENT_KEY"),
-    client_secret: requiredEnv("TIKTOK_CLIENT_SECRET"),
+    client_key: credentials.clientId,
+    client_secret: credentials.clientSecret,
     code,
     grant_type: "authorization_code",
     redirect_uri: redirectUri,
@@ -120,3 +135,5 @@ export async function exchangeTikTokCode({
     },
   }
 }
+
+export { resolveTikTokCredentials }

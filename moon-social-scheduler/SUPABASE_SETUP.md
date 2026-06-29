@@ -30,6 +30,27 @@ supabase db push
 # Copia el contenido de supabase/migrations/001_publish_cron.sql
 ```
 
+### 3.1 Crear bucket de media
+
+Necesitas un bucket `media` en Supabase Storage con soporte para imágenes, GIFs y vídeo.
+
+Puedes crearlo por SQL:
+
+```sql
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'media',
+  'media',
+  true,
+  5368709120,
+  array['image/*', 'video/*', 'image/gif']
+)
+on conflict (id) do update
+set public = excluded.public,
+    file_size_limit = excluded.file_size_limit,
+    allowed_mime_types = excluded.allowed_mime_types;
+```
+
 ### 4. Desplegar Edge Function
 
 ```bash
@@ -88,3 +109,32 @@ SELECT * FROM cron.job;
 curl -X POST https://tu-project.supabase.co/functions/v1/publish \
   -H "Authorization: Bearer YOUR_SERVICE_ROLE_KEY"
 ```
+
+## 6. Brand Agent y conectores (migración 006)
+
+Ejecuta `supabase/migrations/006_brand_agent_connectors.sql` en SQL Editor.
+
+Crea tablas:
+- `BrandProfile`
+- `ConnectorCredential`
+- `GeneratedAsset`
+- `AgentRun`
+
+## 7. Crons adicionales (Vercel)
+
+Además del publish cron en Supabase, Vercel ejecuta (ver `vercel.json`):
+
+| Endpoint | Función |
+|----------|---------|
+| `/api/cron/poll-videos` | Completar videos HeyGen/Fliki |
+| `/api/cron/sync-analytics` | Ingesta métricas IG/TikTok |
+| `/api/cron/refresh-tokens` | Renovar OAuth |
+| `/api/cron/renewal-reminders` | Emails Stripe |
+
+Requiere `CRON_SECRET` en Vercel. Probar:
+
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" https://tu-app.vercel.app/api/cron/poll-videos
+```
+
+Documentación: `docs/DEPLOYMENT.md`

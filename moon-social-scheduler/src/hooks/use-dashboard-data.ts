@@ -23,11 +23,11 @@ export function useAccounts() {
     queryKey: ["accounts"],
     queryFn: () => fetchJson<{ accounts: typeof demoAccounts }>("/api/accounts"),
     select: (data) => data.accounts,
-    placeholderData: { accounts: demoAccounts },
+    placeholderData: { accounts: [] },
     retry: false,
   })
 
-  return { ...query, data: query.data ?? demoAccounts }
+  return { ...query, data: query.data ?? [] }
 }
 
 export function usePosts() {
@@ -35,11 +35,11 @@ export function usePosts() {
     queryKey: ["posts"],
     queryFn: () => fetchJson<{ posts: typeof demoPosts }>("/api/posts"),
     select: (data) => data.posts,
-    placeholderData: { posts: demoPosts },
+    placeholderData: { posts: [] },
     retry: false,
   })
 
-  return { ...query, data: query.data ?? demoPosts }
+  return { ...query, data: query.data ?? [] }
 }
 
 export function useMediaAssets() {

@@ -1,4 +1,4 @@
-import { Platform } from "@/generated/prisma/enums"
+import { Platform } from "@/lib/domain/enums"
 import {
   exchangeTikTokCode,
   getTikTokAuthorizationUrl,
@@ -10,6 +10,7 @@ import {
 } from "@/lib/platforms/tiktok/formatter"
 import { fetchTikTokMetrics } from "@/lib/platforms/tiktok/metrics"
 import { publishTikTokPost } from "@/lib/platforms/tiktok/publish"
+import { refreshTikTokToken } from "@/lib/platforms/tiktok/refresh"
 import type { PlatformAdapter } from "@/lib/platforms/types"
 
 export const tiktokAdapter: PlatformAdapter = {
@@ -29,4 +30,5 @@ export const tiktokAdapter: PlatformAdapter = {
   },
   publish: publishTikTokPost,
   metrics: fetchTikTokMetrics,
+  refresh: refreshTikTokToken,
 }

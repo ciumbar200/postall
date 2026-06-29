@@ -1,4 +1,4 @@
-import { Platform } from "@/generated/prisma/enums"
+import { Platform } from "@/lib/domain/enums"
 
 export const platformMeta = {
   [Platform.INSTAGRAM]: {
@@ -81,4 +81,10 @@ export const platformMeta = {
   },
 } as const
 
-export const mvpPlatforms = [Platform.INSTAGRAM, Platform.TIKTOK] as const
+export const mvpPlatforms = [
+  Platform.INSTAGRAM,
+  Platform.TIKTOK,
+  Platform.LINKEDIN,
+  Platform.FACEBOOK,
+  Platform.YOUTUBE,
+] as const

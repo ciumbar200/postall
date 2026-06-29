@@ -247,6 +247,23 @@ export function ComposerWorkspace() {
                           {String(remaining)} characters remaining.
                         </FieldDescription>
                       </Field>
+                      <Field>
+                        <FieldLabel>Primer comentario (opcional)</FieldLabel>
+                        <Textarea
+                          value={String(
+                            versions[platform]?.settings.firstComment ?? ""
+                          )}
+                          onChange={(event) =>
+                            setPlatformSetting(
+                              platform,
+                              "firstComment",
+                              event.target.value
+                            )
+                          }
+                          placeholder="Se publica como comentario justo después del post (ideal para hashtags o enlaces)."
+                          className="min-h-16 resize-none"
+                        />
+                      </Field>
                       {platform === Platform.TIKTOK ? (
                         <div className="grid gap-4 md:grid-cols-3">
                           <Field>

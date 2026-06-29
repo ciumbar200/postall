@@ -15,6 +15,7 @@ import {
 } from "date-fns"
 import { toast } from "sonner"
 import { usePosts } from "@/hooks/use-dashboard-data"
+import { utcDateKey } from "@/lib/ui/dates"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { PlatformPill } from "@/components/shared/platform-pill"
 import { StatusBadge } from "@/components/shared/status-badge"
@@ -36,7 +37,8 @@ async function reschedulePost(input: { id: string; scheduledAt: string }) {
 export function ContentCalendar() {
   const queryClient = useQueryClient()
   const { data: posts = [] } = usePosts()
-  const currentMonth = new Date()
+  const currentMonth = React.useMemo(() => new Date(), [])
+  const todayKey = React.useMemo(() => utcDateKey(new Date()), [])
   const gridStart = startOfWeek(startOfMonth(currentMonth))
   const gridEnd = endOfWeek(endOfMonth(currentMonth))
   const days: Date[] = []
@@ -103,7 +105,7 @@ export function ContentCalendar() {
               >
                 <div className="mb-2 flex items-center justify-between">
                   <span className="font-medium text-foreground">{format(day, "d")}</span>
-                  {isSameDay(day, new Date()) ? <StatusBadge status="today" /> : null}
+                  {utcDateKey(day) === todayKey ? <StatusBadge status="today" /> : null}
                 </div>
                 <div className="flex flex-col gap-2">
                   {dayPosts.map((post) => (

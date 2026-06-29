@@ -1,9 +1,9 @@
 "use client"
 
 import { ClockIcon, GripVerticalIcon } from "lucide-react"
-import { format } from "date-fns"
-import type { Platform } from "@/generated/prisma/enums"
+import type { Platform } from "@/lib/domain/enums"
 import { useQueue } from "@/hooks/use-dashboard-data"
+import { formatUtcDateTime } from "@/lib/ui/dates"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { PlatformPill } from "@/components/shared/platform-pill"
 import { StatusBadge } from "@/components/shared/status-badge"
@@ -46,7 +46,7 @@ export function QueueManager() {
                 <div className="text-right text-xs text-muted-foreground">
                   <div className="flex items-center justify-end gap-1">
                     <ClockIcon className="size-3" />
-                    {format(new Date(job.runAt), "MMM d, HH:mm")}
+                    {formatUtcDateTime(job.runAt)}
                   </div>
                 </div>
                 <StatusBadge status={job.status} />

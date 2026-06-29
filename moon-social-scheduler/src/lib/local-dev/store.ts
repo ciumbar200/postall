@@ -3,8 +3,9 @@ import {
   Platform,
   PostStatus,
   PublishJobStatus,
+  PublishTargetStatus,
   QueueSlotStatus,
-} from "@/generated/prisma/enums"
+} from "@/lib/domain/enums"
 import {
   demoAccounts,
   demoMedia,
@@ -23,7 +24,7 @@ type DemoPost = (typeof demoPosts)[number] & {
   status?: PostStatus
   targets?: Array<{
     platform: Platform
-    status: PostTargetStatus
+    status: PublishTargetStatus
     socialAccount: DemoAccount
   }>
 }
@@ -77,18 +78,37 @@ export function connectPlatform(platform: Platform) {
     return existing
   }
 
-  // Solo Instagram y TikTok en demo
-  if (platform !== Platform.INSTAGRAM && platform !== Platform.TIKTOK) {
+  if (
+    platform !== Platform.INSTAGRAM &&
+    platform !== Platform.TIKTOK &&
+    platform !== Platform.LINKEDIN &&
+    platform !== Platform.FACEBOOK &&
+    platform !== Platform.YOUTUBE
+  ) {
     throw new Error(`Platform ${platform} not supported in demo mode`)
   }
 
-  const username =
-    platform === Platform.INSTAGRAM ? "moon.instagram.local" : "moon.tiktok.local"
+  const usernameMap = {
+    [Platform.INSTAGRAM]: "moon.instagram.local",
+    [Platform.TIKTOK]: "moon.tiktok.local",
+    [Platform.LINKEDIN]: "moon-linkedin",
+    [Platform.FACEBOOK]: "moon.facebook.page",
+    [Platform.YOUTUBE]: "moonstudio",
+  } as const
+
+  const displayNameMap = {
+    [Platform.INSTAGRAM]: "Demo Instagram",
+    [Platform.TIKTOK]: "Demo TikTok",
+    [Platform.LINKEDIN]: "Demo LinkedIn",
+    [Platform.FACEBOOK]: "Demo Facebook",
+    [Platform.YOUTUBE]: "Demo YouTube",
+  } as const
+
   const account = {
     id: `demo-${platform.toLowerCase()}-${randomUUID()}`,
     platform,
-    username,
-    displayName: platform === Platform.INSTAGRAM ? "Demo Instagram" : "Demo TikTok",
+    username: usernameMap[platform],
+    displayName: displayNameMap[platform],
     status: "CONNECTED",
     avatarUrl: null,
     expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),

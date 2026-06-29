@@ -3,8 +3,9 @@ import { AppProviders } from "@/components/providers/app-providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "MoOn Social Scheduler",
-  description: "Self-hosted social media scheduling with direct platform APIs.",
+  title: "Postall · El publisher de redes más accesible",
+  description:
+    "Programa y publica en todas tus redes desde un solo panel: fácil, asequible y para todos. Calendario, biblioteca, analítica y API + MCP para agentes. Sin contratos anuales y con alertas de fallo y reconexión automática.",
 };
 
 export default function RootLayout({
@@ -13,7 +14,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full dark antialiased" suppressHydrationWarning>
+    <html lang="es" className="h-full antialiased" suppressHydrationWarning>
       <body className="min-h-full flex flex-col">
         <AppProviders>{children}</AppProviders>
       </body>

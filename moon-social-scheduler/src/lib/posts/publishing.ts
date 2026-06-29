@@ -3,11 +3,14 @@ import {
   PostStatus,
   PublishJobStatus,
   PublishTargetStatus,
-} from "@/generated/prisma/enums"
+} from "@/lib/domain/enums"
 import { prisma } from "@/lib/db/client"
 import { toPrismaJson } from "@/lib/db/json"
 import { getPlatformAdapter } from "@/lib/platforms/registry"
 import type { PlatformMedia } from "@/lib/platforms/types"
+import { createNotification } from "@/lib/notifications/service"
+import { dispatchWebhook } from "@/lib/webhooks/deliver"
+import { optionalEnv } from "@/lib/env"
 
 function toPlatformMedia(media: Array<{
   sortOrder: number
@@ -114,6 +117,29 @@ export async function publishPostJob(publishJobId: string) {
           payload: toPrismaJson(result.raw),
         },
       })
+
+      const settings = (version?.settings as Record<string, unknown> | null) ?? null
+      const firstComment =
+        typeof settings?.firstComment === "string" ? settings.firstComment.trim() : ""
+      if (firstComment && adapter.publishComment) {
+        try {
+          await adapter.publishComment({
+            account: {
+              id: target.socialAccount.id,
+              providerAccountId: target.socialAccount.providerAccountId,
+              username: target.socialAccount.username,
+              accessToken: target.socialAccount.accessToken,
+              refreshToken: target.socialAccount.refreshToken,
+              expiresAt: target.socialAccount.expiresAt,
+              metadata: target.socialAccount.metadata as Record<string, unknown> | null,
+            },
+            externalPostId: result.externalPostId,
+            text: firstComment,
+          })
+        } catch (commentError) {
+          console.error("Failed to publish first comment", commentError)
+        }
+      }
     })
   )
 
@@ -144,6 +170,22 @@ export async function publishPostJob(publishJobId: string) {
         message,
       },
     })
+
+    try {
+      const base = optionalEnv("APP_URL", "https://app.postall.app").replace(/\/$/, "")
+      await createNotification({
+        workspaceId: publishJob.post.workspaceId,
+        type: "PUBLISH_FAILED",
+        severity: "ERROR",
+        title: `Fallo al publicar en ${target.platform}`,
+        body: `No se pudo publicar tu post en ${target.platform}. Motivo: ${message}`,
+        link: `${base}/dashboard/queue`,
+        metadata: { postId: publishJob.postId, targetId: target.id, platform: target.platform },
+        email: true,
+      })
+    } catch (notifyError) {
+      console.error("Failed to create publish-failure notification", notifyError)
+    }
   }
 
   const nextPostStatus =
@@ -177,6 +219,25 @@ export async function publishPostJob(publishJobId: string) {
           : null,
     },
   })
+
+  try {
+    await dispatchWebhook(
+      publishJob.post.workspaceId,
+      nextPostStatus === PostStatus.FAILED ? "post.failed" : "post.published",
+      {
+        postId: publishJob.postId,
+        status: nextPostStatus,
+        published: results.length - failed.length,
+        failed: failed.length,
+        targets: publishJob.post.targets.map((target) => ({
+          platform: target.platform,
+          accountId: target.socialAccountId,
+        })),
+      }
+    )
+  } catch (webhookError) {
+    console.error("Failed to dispatch publish webhook", webhookError)
+  }
 
   return { failed: failed.length, total: results.length }
 }

@@ -1,11 +1,11 @@
-import { Platform, PostStatus, PublishJobStatus } from "@/generated/prisma/enums"
+import { Platform, PostStatus, PublishJobStatus } from "@/lib/domain/enums"
 
 export const demoAccounts = [
   {
     id: "demo-instagram",
     platform: Platform.INSTAGRAM,
     username: "moon.studio",
-    displayName: "MoOn Studio",
+    displayName: "Postall Studio",
     status: "CONNECTED",
     avatarUrl: null,
     expiresAt: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString(),
@@ -14,10 +14,37 @@ export const demoAccounts = [
     id: "demo-tiktok",
     platform: Platform.TIKTOK,
     username: "moon.scheduler",
-    displayName: "MoOn Scheduler",
+    displayName: "Postall Scheduler",
     status: "CONNECTED",
     avatarUrl: null,
     expiresAt: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "demo-linkedin",
+    platform: Platform.LINKEDIN,
+    username: "moon-social",
+    displayName: "Postall LinkedIn",
+    status: "CONNECTED",
+    avatarUrl: null,
+    expiresAt: null,
+  },
+  {
+    id: "demo-facebook",
+    platform: Platform.FACEBOOK,
+    username: "moon.social.page",
+    displayName: "Postall Facebook",
+    status: "CONNECTED",
+    avatarUrl: null,
+    expiresAt: null,
+  },
+  {
+    id: "demo-youtube",
+    platform: Platform.YOUTUBE,
+    username: "moonstudio",
+    displayName: "Postall YouTube",
+    status: "CONNECTED",
+    avatarUrl: null,
+    expiresAt: null,
   },
 ]
 
@@ -30,6 +57,7 @@ export const demoPosts = [
     targets: [
       { platform: Platform.INSTAGRAM, status: "SCHEDULED", socialAccount: demoAccounts[0] },
       { platform: Platform.TIKTOK, status: "SCHEDULED", socialAccount: demoAccounts[1] },
+      { platform: Platform.LINKEDIN, status: "SCHEDULED", socialAccount: demoAccounts[2] },
     ],
   },
   {
@@ -37,14 +65,20 @@ export const demoPosts = [
     baseText: "Behind the scenes clip with direct API publishing.",
     status: PostStatus.QUEUED,
     scheduledAt: new Date(Date.now() + 28 * 60 * 60 * 1000).toISOString(),
-    targets: [{ platform: Platform.TIKTOK, status: "QUEUED", socialAccount: demoAccounts[1] }],
+    targets: [
+      { platform: Platform.TIKTOK, status: "QUEUED", socialAccount: demoAccounts[1] },
+      { platform: Platform.YOUTUBE, status: "QUEUED", socialAccount: demoAccounts[4] },
+    ],
   },
   {
     id: "post-3",
     baseText: "Carousel recap and CTA.",
     status: PostStatus.PUBLISHED,
     scheduledAt: new Date(Date.now() - 22 * 60 * 60 * 1000).toISOString(),
-    targets: [{ platform: Platform.INSTAGRAM, status: "PUBLISHED", socialAccount: demoAccounts[0] }],
+    targets: [
+      { platform: Platform.INSTAGRAM, status: "PUBLISHED", socialAccount: demoAccounts[0] },
+      { platform: Platform.FACEBOOK, status: "PUBLISHED", socialAccount: demoAccounts[3] },
+    ],
   },
 ]
 

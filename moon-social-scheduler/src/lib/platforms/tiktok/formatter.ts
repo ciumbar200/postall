@@ -1,17 +1,13 @@
+import { Platform } from "@/lib/domain/enums"
 import type { PublishPostInput } from "@/lib/platforms/types"
+import { assertValidPost } from "@/lib/platforms/validation"
 
 export function validateTikTokPost(input: PublishPostInput): void {
-  if (!input.media.length) {
-    throw new Error("TikTok publishing requires an image or video asset.")
-  }
-
-  if (input.text.length > 2200) {
-    throw new Error("TikTok captions must be 2,200 characters or fewer.")
-  }
-
-  if (input.media.length > 35) {
-    throw new Error("TikTok photo posts support up to 35 images.")
-  }
+  assertValidPost(Platform.TIKTOK, {
+    text: input.text,
+    media: input.media,
+    settings: input.settings,
+  })
 }
 
 export function toTikTokPayload(input: PublishPostInput): Record<string, unknown> {

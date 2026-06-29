@@ -1,17 +1,13 @@
+import { Platform } from "@/lib/domain/enums"
 import type { PublishPostInput } from "@/lib/platforms/types"
+import { assertValidPost } from "@/lib/platforms/validation"
 
 export function validateInstagramPost(input: PublishPostInput): void {
-  if (!input.media.length) {
-    throw new Error("Instagram requires at least one image or video asset.")
-  }
-
-  if (input.text.length > 2200) {
-    throw new Error("Instagram captions must be 2,200 characters or fewer.")
-  }
-
-  if (input.media.length > 10) {
-    throw new Error("Instagram carousel posts support up to 10 media assets.")
-  }
+  assertValidPost(Platform.INSTAGRAM, {
+    text: input.text,
+    media: input.media,
+    settings: input.settings,
+  })
 }
 
 export function toInstagramContainerPayload(
